@@ -1,0 +1,1 @@
+这是一个基于request库爬取链家二手房信息，并且用sqlalchemy存入mysql数据库
