@@ -93,7 +93,7 @@ print house
 '''
 Base = declarative_base()
 class House(Base):
-    __tablename__='xuhui'
+    __tablename__='house'
     id = Column(String(50))
     house_id = Column(String(50),primary_key=True,unique=True)
     price = Column(String(50))
@@ -103,6 +103,7 @@ class House(Base):
     room_ting = Column(String(50))
     area = Column(String(50))
     district = Column(String(50))
+    community = Column(String(50))
     address = Column(String(50))
     xiaoqu = Column(String(50))
     floor = Column(String(50))
@@ -118,28 +119,31 @@ engine = create_engine(DB_URI,echo=True)
 #Base.metadata.create_all(bind=engine) #创建house表
 DB_Session = sessionmaker(bind=engine) #创建DB_session类型
 session = DB_Session() #创建session对象
-query=session.query(House)
-#count=query.count()
-#HOUSE_ID=[0]*100
-print query.filter_by(id=1).first()
-
+query=session.query(House.house_id)
+count=query.count()
+#housesellid=[0]*100
+test=query.filter_by(id=1).all()
+print test
+print type(test)
+print test[0]
+print type(test[0])
+count=count+1
+#print count=count+1
 
 for j in range(1,count):
-    HOUSE_ID[j] = query.filter_by(id=j).all()
-    print query.all()
-    housesellid= HOUSE_ID[j].encode("utf-8")
-    #print query.all()
-    #print type(query.all())
-    #housesellid=''.join(HOUSE_ID)
-    #print housesellid
+    housesellid = query.filter_by(id=j).one()
+    print housesellid[0]
+    print type(housesellid[0])
+    HOUSE_ID= housesellid[0].encode("utf-8")
+    print HOUSE_ID
 
-    url="http://sh.lianjia.com/ershoufang/"+housesellid+".html"
+    url="http://sh.lianjia.com/ershoufang/"+HOUSE_ID+".html"
     print '第%d次查询的url是%s'% (j,url)
     headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36'}
     r=requests.get(url,headers=headers,timeout=7)
     html=r.content
 
-    house={'price':'','unit_pric':'','room':'','room_shi':'','room_ting':'','area':'','district':'','address':'','xiaoqu':'','floor':'','buildyear':'','decoration':'','towards':'','buyyear':''}   #定义房子为字典
+    house={'price':'','unit_pric':'','room':'','room_shi':'','room_ting':'','area':'','district':'','community':'','address':'','xiaoqu':'','floor':'','buildyear':'','decoration':'','towards':'','buyyear':''}   #定义房子为字典
     
     reg_price=re.compile(r"(?<=mainInfo bold\">)\d+(?=<span class=\"unit\">万)")
     match_price=re.search(reg_price,html)
@@ -163,9 +167,13 @@ for j in range(1,count):
     match_area=re.search(reg_area,html)
     house['area']=match_area.group(0)
 
-    reg_district=re.compile(r"(?<=areaEllipsis\">).+?(?=</span>)")
+    reg_district=re.compile(r"(?<=areaEllipsis\">)(\D+?)(\s)(\D+?)(?=</span>)")
     match_district=re.search(reg_district,html)
-    house['district']=match_district.group(0)
+    house['district']=match_district.group(1)
+    
+    #reg_community=re.compile(r"(?<=areaEllipsis\">[浦东松江徐汇闵行]+\s)\w*?(?=</span>)")
+    #match_community=re.search(reg_community,html)
+    house['community']=match_district.group(3)
 
     reg_address=re.compile(r"(?<=addrEllipsis fl ml_5\" title=\").+?(?=\">)")
     match_address=re.search(reg_address,html)
@@ -181,10 +189,13 @@ for j in range(1,count):
     house['floor']=match_floor.group(0)
 
     reg_buildyear=re.compile(r"\d+年建")
-    match_buildyear=re.search(reg_buildyear,html)    
-    house['buildyear']=match_buildyear.group(0)
+    match_buildyear=re.search(reg_buildyear,html)
+    if match_buildyear!= None:
+        house['buildyear']=match_buildyear.group(0)
+    else:
+        house['buildyear']='None'
 
-    reg_towards=re.compile(r"(?<=房屋朝向\：</span>).+?(?=</li>)")
+    reg_towards=re.compile(r"(?<=朝向\：</span>).+?(?=</li>)")
     match_towards=re.search(reg_towards,html)
     house['towards']=match_towards.group(0)
 
@@ -200,9 +211,10 @@ for j in range(1,count):
     match_unit_price=re.search(reg_unit_price,html)
     house['unit_price']=match_unit_price.group(0)
 
-    new_house=House(price=house['price'],unit_price=house['unit_price'],room=house['room'],room_shi=house['room_shi'],room_ting=house['room_ting'],area=house['area'],district=house['district'],address=house['address'],xiaoqu=house['xiaoqu'],floor=house['floor'],buildyear=house['buildyear'],towards=house['towards'],decoration=house['decoration'],buyyear=house['buyyear']) #创建House对象
+    new_house=House(house_id=HOUSE_ID,price=house['price'],unit_price=house['unit_price'],room=house['room'],room_shi=house['room_shi'],room_ting=house['room_ting'],area=house['area'],district=house['district'],community=house['community'],address=house['address'],xiaoqu=house['xiaoqu'],floor=house['floor'],buildyear=house['buildyear'],towards=house['towards'],decoration=house['decoration'],buyyear=house['buyyear']) #创建House对象
 
-    session.merger(new_house) #添加到session
+    session.merge(new_house) #添加到session
+    session.commit()
 
-session.commit() #提交即保存到数据库
+#session.commit() #提交即保存到数据库
 session.close() #关闭session

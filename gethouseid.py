@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 import requests
 import sys
 import re
+
 '''for i in range(1,100):
     url='http://sh.lianjia.com/ershoufang/xuhui/d'+str(i)
     print url
@@ -29,11 +30,13 @@ import re
     
     house_id_list=list(set(match_house_id))
 #house_id.sort(match_house_id.index)
-    #print house_id_list
+    print house_id_list
+    print len(house_id_list)
 '''
+ID=0
 Base = declarative_base()
 class House(Base):
-    __tablename__='xuhui'
+    __tablename__='house'
     id = Column(String(50))
     house_id = Column(String(50),primary_key=True,unique=True,index=True)	#house_id是主键，唯一,索引
     price = Column(String(50))
@@ -43,6 +46,7 @@ class House(Base):
     room_ting = Column(String(50))
     area = Column(String(50))
     district = Column(String(50))
+    community = Column(String(50))
     address = Column(String(50))
     xiaoqu = Column(String(50))
     floor = Column(String(50))
@@ -57,8 +61,8 @@ Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine) #创建house表
 DB_Session = sessionmaker(bind=engine) #创建DB_session类型
 session = DB_Session() #创建session对象
-for i in range(1,100):
-    url='http://sh.lianjia.com/ershoufang/xuhui/d'+str(i)
+for i in range(1,101):
+    url='http://sh.lianjia.com/ershoufang/d'+str(i)
     print url
     headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36'}
     r=requests.get(url,headers=headers,timeout=7)
@@ -71,23 +75,23 @@ for i in range(1,100):
 
     house_id_list=list(set(match_house_id))
     #print house_id_list
+    print house_id_list
+    print len(house_id_list)
 
     query=session.query(House.house_id)
-    ID=query.count()
-
-    for index in range(len(house_id_list)):
-        new_house=House(id=ID+index,house_id=house_id_list[index])
+    for index in range(0,len(house_id_list)):
         
+        new_house=House(id=ID+1,house_id=house_id_list[index])
+        ID=ID+1
         session.merge(new_house)
         print house_id_list[index]
 
-
 #print session.query(House.house_id)
 session.commit()
-print  "查询第一列\n"
-query=session.query(House.house_id)
-for j in range(1,len(house_id_list)):
-     print query.filter_by(id=j).all()
+#print  "查询第一列\n"
+#query=session.query(House.house_id)
+#for j in range(1,len(house_id_list)+1):
+#     print query.filter_by(id=j).all()
 print "mysql一共有%s行" % query.count()
 session.close()
-print "恭喜，1000个house_id已经存入mysql！"
+print "恭喜，%d个house_id已经存入mysql！" % (ID)
