@@ -114,7 +114,7 @@ class House(Base):
 
 
 DB_URI = 'mysql+mysqldb://lianjia:lianjia@localhost/lianjia?charset=utf8'
-engine = create_engine(DB_URI,echo=True)
+engine = create_engine(DB_URI)
 #Base.metadata.drop_all(bind=engine)
 #Base.metadata.create_all(bind=engine) #创建house表
 DB_Session = sessionmaker(bind=engine) #创建DB_session类型
@@ -122,20 +122,20 @@ session = DB_Session() #创建session对象
 query=session.query(House.house_id)
 count=query.count()
 #housesellid=[0]*100
-test=query.filter_by(id=1).all()
-print test
-print type(test)
-print test[0]
-print type(test[0])
+#test=query.filter_by(id=1).all()
+#print test
+#print type(test)
+#print test[0]
+#print type(test[0])
 count=count+1
 #print count=count+1
 
-for j in range(1,count):
+for j in range(438,count):
     housesellid = query.filter_by(id=j).one()
-    print housesellid[0]
-    print type(housesellid[0])
+    #print housesellid[0]
+    #print type(housesellid[0])
     HOUSE_ID= housesellid[0].encode("utf-8")
-    print HOUSE_ID
+    #print HOUSE_ID
 
     url="http://sh.lianjia.com/ershoufang/"+HOUSE_ID+".html"
     print '第%d次查询的url是%s'% (j,url)
@@ -203,9 +203,12 @@ for j in range(1,count):
     match_decoration=re.search(reg_decoration,html)
     house['decoration']=match_decoration.group(0)
 
-    reg_buyyear=re.compile(r"(?<=房本年限\：</span>).+?(?=</li>)")
-    match_buyyear=re.search(reg_buyyear,html)
-    house['buyyear']=match_buyyear.group(0)
+    try:
+        reg_buyyear=re.compile(r"(?<=房本年限\：</span>).+?(?=</li>)")
+        match_buyyear=re.search(reg_buyyear,html)
+        house['buyyear']=match_buyyear.group(0)
+    except AttributeError, e:
+        print "没有购买年限\n"
 
     reg_unit_price=re.compile(r"\d+?元\/平")
     match_unit_price=re.search(reg_unit_price,html)
